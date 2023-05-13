@@ -1,0 +1,49 @@
+<head>
+    <meta charset="utf-8">
+    <title>My Teachable Machine Project</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.8.0/dist/tf.min.js"></script>
+    <script src="model.json"></script>
+  </head>
+  <body>
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <script>
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+  
+      navigator.mediaDevices.getUserMedia({video: true})
+        .then(stream => {
+          video.srcObject = stream;
+          video.play();
+        })
+        .catch(error => {
+          console.error(error);
+        });
+  
+      const modelPromise = tf.loadLayersModel('model.json');
+      let prediction = '';
+  
+      function predict() {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const input = tf.browser.fromPixels(canvas).reshape([1, 480, 640, 3]).div(tf.scalar(255));
+        modelPromise.then(model => {
+          const output = model.predict(input);
+          const values = output.dataSync();
+          prediction = values[0] > 0.5 ? 'banaan' : 'niet banaan';
+          output.dispose();
+          requestAnimationFrame(predict);
+        });
+      }
+  
+      modelPromise.then(model => {
+        requestAnimationFrame(predict);
+      });
+  
+      setInterval(() => {
+        document.getElementById('prediction').textContent = prediction;
+      }, 100);
+    </script>
+    <div>Predictie: <span id="prediction"></span></div>
+  </body>
+    
