@@ -41,12 +41,16 @@ function preload() {
 }
 
 function setup() {
-  canvas = createCanvas(440, 356);
+  canvas = createCanvas(440, 360);
   createButtons();
 
   video = createCapture(VIDEO);
-  video.size(440, 360);
   video.hide();
+  video.size(width, height);
+  video.elt.addEventListener('loadedmetadata', function() {
+    poseNet = ml5.poseNet(video, modelLoaded);
+    poseNet.on('pose', gotPoses);
+  });
 
   button = createButton('Take a picture');
   button.mousePressed(takePicture);
@@ -80,7 +84,7 @@ function setup() {
 
 function draw() {
   background(0);
-  if (capturing) {
+  if (capturing && video.loadedmetadata) {
     image(video, 0, 0, width, height);
     if (pose) {
       for (let i = 0; i < skeleton.length; i++) {
